@@ -1,0 +1,171 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+interface IUserContract {
+    function isTraderActive(address _trader) external view returns (bool);
+    function isBrokerAuthorised(address _broker) external view returns (bool);
+}
+
+contract TradeContract {
+    address public adminBroker;
+    IUserContract public userContract;
+
+
+    enum TradeStatus {
+        Submitted,
+        BrokerVerified,
+        Rejected
+    }
+
+
+struct Trade {
+
+    string assetType; //Example such as BTC/USD, AUD/USD, EUR/USD
+    uint256 entryPrice;
+    uint256 exitPrice;
+    uint256 submitTime;
+    uint256 verifyTime;
+    uint256 profitOrLoss; // Verified P&L by agent
+    TradeStatus status; //Verified, Rejected 
+}
+
+mapping(address => Trade[]) private traderTrades;
+
+event TradeSubmitted(
+    address indexed trader,
+    uint256 indexed tradeIndex,
+    string assetType,
+    uint256 entryPrice,
+    uint256 exitPrice,
+    uint256 submitTime
+);
+
+event TradeVerified(
+    address indexed trader,
+    uint256 indexed tradeIndex,
+    address indexed brokerOracle,
+    uint256 profitOrLoss,
+    uint256 verifyTime
+);
+
+event TradeRejected(
+    address indexed trader,
+    uint256 indexed tradeIndex,
+    address indexed brokerOracle,
+    uint256 verifyTime
+);
+
+modifier onlyAdmin() {
+    require(msg.sender == adminBroker, "Only Broker can call this");
+    _;
+}
+modifier onlyActiveTrader() {
+    require(userContract.isTraderActive(msg.sender), "Trader is not active");
+    _;
+}
+modifier onlyAuthorisedBroker() {
+    require(userContract.isBrokerAuthorised(msg.sender), "Broker/Oracle is not authrised");
+    _;
+}
+modifier validTrade(address _trader, uint256 _tradeIndex) {
+    require(_tradeIndex < traderTrades[_trader].length, "Trade does not exist");
+    _;
+}
+
+constructor(address _userContractAddress) {
+    require(_userContractAddress != address(0), "invalid UserContract Address");
+    adminBroker = msg.sender;
+    userContract = IUserContract(_userContractAddress);
+
+}
+
+function submitTrade(
+    string memory _assetType,
+    uint256 _entryPrice,
+    uint256 _exitPrice
+
+) external onlyActiveTrader {
+    require(bytes(_assetType).length > 0, "asset type is required");
+    require(_entryPrice > 0, "Entry price must be greater than zero");
+    require(_exitPrice > 0, "Exit Price must be greater than zero");
+
+    traderTrades[msg.sender].push(
+        Trade({
+            assetType: _assetType,
+            entryPrice: _entryPrice,
+            exitPrice: _exitPrice,
+            submitTime: block.timestamp,
+            verifyTime: 0,
+            profitOrLoss: 0,
+            status: TradeStatus.Submitted
+        })
+    );
+
+
+    uint256 tradeIndex = traderTrades[msg.sender].length -1;
+
+    emit TradeSubmitted(
+        msg.sender,
+        tradeIndex,
+        _assetType,
+        _entryPrice,
+        _exitPrice,
+        block.timestamp
+    );
+}
+
+    function getTradeResult(address _trader, uint256 _tradeIndex)
+        external
+        view
+        validTrade(_trader, _tradeIndex)
+        returns (uint256)
+    {
+        require(traderTrades[_trader][_tradeIndex].status == TradeStatus.BrokerVerified, "Trade is not verified");
+        return traderTrades[_trader][_tradeIndex].profitOrLoss;
+    }
+
+    function isTradeVerified(address _trader, uint256 _tradeIndex)
+        external
+        view 
+        validTrade(_trader, _tradeIndex)
+        returns (bool)
+
+        {
+            return traderTrades[_trader][_tradeIndex].status == TradeStatus.BrokerVerified;
+        }
+
+
+    function getTradeDetails(address _trader, uint256 _tradeIndex)
+        external 
+        view
+        validTrade(_trader, _tradeIndex)
+        returns (
+            string memory assetType,
+            uint256 entryPrice,
+            uint256 exitPrice,
+            uint256 submitTime,
+            uint256 verifyTime,
+            uint256 profitOrLoss,
+            TradeStatus status
+        )
+        {
+            Trade storage trade = traderTrades[_trader][_tradeIndex];
+
+            return (
+            trade.assetType,
+            trade.entryPrice,
+            trade.exitPrice,
+            trade.submitTime,
+            trade.verifyTime,
+            trade.profitOrLoss,
+            trade.status
+            );
+        }
+
+        function updateUserContract(address _newUserContractAddress) external onlyAdmin {
+        require(_newUserContractAddress != address(0), "Invalid UserContract address");
+        userContract = IUserContract(_newUserContractAddress);
+        }
+
+}
+
