@@ -15,7 +15,9 @@ contract UserContract {
     }
     // Hash table for O(1) lookup efficiency. Links a wallet address to a UserProfile.
     mapping(address => UserProfile) public users;
-    // Logs important activities on-chain. Used by the UI (Week 8) to update the interface.
+    mapping(address => bool) public authorisedBrokers;
+    event BrokerAuthorised(address indexed brokerAddress, bool isAuthorised);
+    // Logs important activities on-chain. Used by the UI to update the interface.
     event UserRegistered(address indexed userAddress, string username, uint256 timestamp);
     event UserStatusUpdated(address indexed userAddress, AccountStatus newStatus);
     // Restricts function execution to authorized addresses using msg.sender.
@@ -55,4 +57,20 @@ contract UserContract {
     function isTraderActive(address _trader) external view returns (bool) {
         return users[_trader].status == AccountStatus.Active;
     }
+    // Allows the admin to grant or revoke broker permissions.
+    function setBrokerPermission(address _broker, bool _status) external onlyAdmin {
+        require(_broker != address(0), "Error: Invalid broker address");
+        authorisedBrokers[_broker] = _status;
+        emit BrokerAuthorised(_broker, _status);
+    }
+
+// Need this function for linking trade contract
+    function isBrokerAuthorised(address _broker) external view returns (bool) {
+        return authorisedBrokers[_broker];
+    }
+receive() external payable {
+}
+
+fallback() external payable {
+}
 }

@@ -113,6 +113,34 @@ function submitTrade(
         block.timestamp
     );
 }
+function brokerVerifyTrade(
+    address _trader, 
+    uint256 _tradeIndex, 
+    uint256 _profitOrLoss, 
+    TradeStatus _status
+) external onlyAuthorisedBroker validTrade(_trader, _tradeIndex) {
+    require(_status == TradeStatus.BrokerVerified || _status == TradeStatus.Rejected, "Invalid status update");
+    
+    Trade storage trade = traderTrades[_trader][_tradeIndex];
+    require(trade.status == TradeStatus.Submitted, "Trade is already processed");
+
+    trade.status = _status;
+    trade.verifyTime = block.timestamp;
+    
+    if (_status == TradeStatus.BrokerVerified) {
+        trade.profitOrLoss = _profitOrLoss;
+        emit TradeVerified(_trader, _tradeIndex, msg.sender, _profitOrLoss, block.timestamp);
+    } else {
+        emit TradeRejected(_trader, _tradeIndex, msg.sender, block.timestamp);
+    }
+}
+
+//    ------------------------ //
+// Add this function for testing
+function getTradeCount(address _trader) external view returns (uint256) {
+    return traderTrades[_trader].length;
+}
+//    ------------------------ //
 
     function getTradeResult(address _trader, uint256 _tradeIndex)
         external
