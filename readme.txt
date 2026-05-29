@@ -69,7 +69,7 @@ Instructions for blockchain deployment through Remix IDE
 Register a trader and call registerTrader()
 Account will register
 
-Using the admin account call setAuthorisedBroker()
+Using the admin account call setBrokerPermission()
 Broker account will be set to true
 
 Using Trader account call submitTrade()
