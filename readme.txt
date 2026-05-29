@@ -78,11 +78,17 @@ Enter Asset, price of trades and other details which can be added at any time fo
 Trade will be sotres
 
 Switch batck to broker account and call verifyTrade()
-provide trader address, number, profit or loss
+provide trader address, number (staring from 0), profit or loss, status(0: pending, 1: accept, 2: reject)
 This will confirm the trade status as verified
 
 Call analytics function eg calculateTotalPL()
-Will confirm analytics from the chosen verified trader
+Will calculate total PL from trader history
+
+Call analytics function eg calculateWinRate()
+Will caculate win rate from trader history
+ 
+Use Admin account call suspendTrader()
+Will set trader account being inactive
 
 
 -------
