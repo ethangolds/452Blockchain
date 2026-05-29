@@ -94,5 +94,13 @@ The Project separates functionality into three separate contracts
 Through REMIX the entire backend and data can be run for anyone. However a UI can be made or implemented for bank/broker companies ect to run a quick and clean analysis on potential trader clients
 
 
+Flaws and potential improvements.
+A future UI would assist with simplicity once this blockchain became mainstream and more wildly used. There are also situations where its important for the correct accounts to be used. For example during our in person demo we ran into an issue where the Broker is not authorized error appeared. This was a result of the wrong account calling the verify trader, proving that the restrictions put in place for each stakeholder works. But also showed us that a simpler UI for a official release of the blockchain will be important for a final product.
+Use of gas fees is also a consideration as with high volume the demand on blockchain could real high levels.
+
+
+
+
+
 
 

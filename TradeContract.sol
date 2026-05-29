@@ -10,12 +10,14 @@ contract TradeContract {
     address public adminBroker;
     IUserContract public userContract;
 
+
+// Trade states 
     enum TradeStatus {
         Submitted,
         BrokerVerified,
         Rejected
     }
-
+// stores trade information submitted by trader
     struct Trade {
         string assetType; 
         uint256 entryPrice;
@@ -25,6 +27,7 @@ contract TradeContract {
         int256 profitOrLoss; 
         TradeStatus status; 
     }
+// Mpas each traers wallet to their list of submitted trades
 
     mapping(address => Trade[]) private traderTrades;
 
@@ -52,14 +55,20 @@ contract TradeContract {
         uint256 verifyTime
     );
 
+
+// Access control modifiers used to restrict contract functions
+
     modifier onlyAdmin() {
         require(msg.sender == adminBroker, "Only Broker can call this");
         _;
     }
+
+    // Set only registerd and active traders can submit trades
     modifier onlyActiveTrader() {
         require(userContract.isTraderActive(msg.sender), "Trader is not active");
         _;
     }
+    // Only authorised broker can verify or reject trades
     modifier onlyAuthorisedBroker() {
         require(userContract.isBrokerAuthorised(msg.sender), "Broker/Oracle is not authrised");
         _;
@@ -74,6 +83,9 @@ contract TradeContract {
         adminBroker = msg.sender;
         userContract = IUserContract(_userContractAddress);
     }
+
+    /* Trader Submit completed trades.
+    The trade remains in submitted status until approved by an authorised broker */
 
     function submitTrade(
         string memory _assetType,
@@ -108,6 +120,8 @@ contract TradeContract {
         );
     }
 
+    // Broker berifies or rejects submitted trades. Verifies stores a confirmed profit or loss value. Rejects excludes
+
     function brokerVerifyTrade(
         address _trader, 
         uint256 _tradeIndex, 
@@ -133,7 +147,7 @@ contract TradeContract {
     function getTradeCount(address _trader) external view returns (uint256) {
         return traderTrades[_trader].length;
     }
-
+// Return result of profit or loss for verifies trader only
     function getTradeResult(address _trader, uint256 _tradeIndex)
         external
         view
